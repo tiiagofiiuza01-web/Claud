@@ -4,7 +4,7 @@ import {
   staticFile, useCurrentFrame, useVideoConfig, Easing,
 } from 'remotion';
 import {loadFont} from '@remotion/fonts';
-import beatsData from './electro_beats.json';
+import beatsData from './galileu_beats.json';
 
 const DISPLAY = 'Anton';
 const BODY = 'Montserrat';
@@ -12,13 +12,15 @@ loadFont({family: DISPLAY, url: staticFile('anton.woff2')});
 loadFont({family: BODY, url: staticFile('montserrat.woff2'), weight: '100 900'});
 
 export const FPS = 30;
-const MUSIC_START = 124.04; // início do "suspense" antes do drop
-const MUSIC_END = 166.0;
+// Galileu (Fernandinho): 12 batidas de entrada e o drop no "Galileu" do 2º refrão (158,38s)
+const MUSIC_START = 152.18;
+const FILE_OFFSET = 140; // public/galileu.mp3 começa em 2:20 da faixa original
+const TOTAL_BEATS = 96;
 const BEATS = (beatsData.beats as number[])
   .filter((b) => b >= MUSIC_START - 0.05)
   .map((b) => (b - MUSIC_START) * FPS);
 const B = (i: number) => Math.round(BEATS[Math.min(i, BEATS.length - 1)]);
-export const TOTAL = Math.round((MUSIC_END - MUSIC_START) * FPS);
+export const TOTAL = B(TOTAL_BEATS) + 15;
 
 const C = {
   navy: '#120E4A', blue: '#2C2CC8', purple: '#6A2BE0', gold: '#FFD400', red: '#FF2D55', white: '#FFFFFF', cyan: '#19D3FF',
@@ -40,30 +42,33 @@ const Vid: React.FC<Src & {style?: React.CSSProperties}> = ({src, at, rate = 1, 
 );
 
 /** pulso de escala a cada batida (frame absoluto) */
-const usePulse = (absFrame: number, amount = 0.03) => {
-  let last = 0;
-  for (const b of BEATS) { if (b <= absFrame) last = b; else break; }
-  const d = absFrame - last;
-  return 1 + amount * Math.exp(-d / 3);
-};
+const usePulse = (_absFrame: number, _amount = 0) => 1; // pulso desligado: evitava tremor
 
+const STRIPE_PERIOD = 120;
 const Stripes: React.FC<{speed?: number; opacity?: number}> = ({speed = 4, opacity = 0.12}) => {
   const f = useCurrentFrame();
+  const shift = (f * speed) % STRIPE_PERIOD;
   return (
-    <AbsoluteFill style={{
-      opacity,
-      backgroundImage: `repeating-linear-gradient(-35deg, ${C.white} 0 40px, transparent 40px 120px)`,
-      backgroundPosition: `${f * speed}px 0`,
-    }} />
+    <AbsoluteFill style={{opacity, overflow: 'hidden'}}>
+      <div style={{
+        position: 'absolute', left: '50%', top: '50%', width: 3200, height: 3200, marginLeft: -1600, marginTop: -1600,
+        transform: `rotate(-35deg) translateX(${shift - STRIPE_PERIOD}px)`,
+        backgroundImage: `repeating-linear-gradient(90deg, ${C.white} 0 40px, transparent 40px ${STRIPE_PERIOD}px)`,
+      }} />
+    </AbsoluteFill>
   );
 };
 
 const Ticker: React.FC<{y: number; color?: string; bg?: string; dir?: 1 | -1; rotate?: number}> = ({y, color = C.navy, bg = C.gold, dir = 1, rotate = -4}) => {
   const f = useCurrentFrame();
-  const text = 'CELEBRA TEEN 2026 ★ COPA DAS NAÇÕES ★ G148 TEEN ★ '.repeat(6);
+  const unit = 'CELEBRA TEEN 2026 ★ COPA DAS NAÇÕES ★ G148 TEEN ★ '.repeat(4);
+  const p = ((f * 0.35) % 50) * dir;
+  const x = dir === 1 ? -p : -50 - p;
   return (
     <div style={{position: 'absolute', left: -200, right: -200, top: y, background: bg, transform: `rotate(${rotate}deg)`, padding: '10px 0', overflow: 'hidden', boxShadow: '0 10px 0 rgba(0,0,0,.25)'}}>
-      <div style={{whiteSpace: 'nowrap', fontFamily: DISPLAY, fontSize: 54, color, letterSpacing: 3, transform: `translateX(${-((f * 9 * dir) % 1600) - 800}px)`}}>{text}</div>
+      <div style={{display: 'inline-flex', whiteSpace: 'pre', fontFamily: DISPLAY, fontSize: 54, color, letterSpacing: 3, transform: `translateX(${x}%)`}}>
+        <span>{unit}</span><span>{unit}</span>
+      </div>
     </div>
   );
 };
@@ -147,9 +152,8 @@ const Scene: React.FC<{layout: Layout; dur: number; startAbs: number}> = ({layou
   const beatInScene = (k: number) => B(BEATS.findIndex((b) => b >= startAbs - 0.5) + k) - startAbs;
 
   if (layout.kind === 'full') {
-    const punch = interpolate(f, [0, 6], [1.15, 1], {...clamp, easing: Easing.out(Easing.cubic)});
-    const drift = interpolate(f, [0, dur], layout.zoom === 'out' ? [1.08, 1] : [1, 1.08]);
-    return <AbsoluteFill style={{overflow: 'hidden'}}><div style={{width: '100%', height: '100%', transform: `scale(${punch * drift * pulse})`}}><Vid {...layout.clip} /></div></AbsoluteFill>;
+    const drift = interpolate(f, [0, dur], layout.zoom === 'out' ? [1.06, 1] : [1, 1.06], {easing: Easing.inOut(Easing.sin)});
+    return <AbsoluteFill style={{overflow: 'hidden'}}><div style={{width: '100%', height: '100%', transform: `scale(${drift * pulse})`}}><Vid {...layout.clip} /></div></AbsoluteFill>;
   }
 
   if (layout.kind === 'cols' || layout.kind === 'rows') {
@@ -163,7 +167,7 @@ const Scene: React.FC<{layout: Layout; dur: number; startAbs: number}> = ({layou
           const off = (1 - s) * 1100 * dir;
           return (
             <div key={i} style={{flex: 1, overflow: 'hidden', borderRadius: 24, transform: isCols ? `translateY(${off}px)` : `translateX(${off}px)`}}>
-              <Vid {...c} style={{transform: `scale(${1.05 + 0.05 * Math.sin((f + i * 10) / 20)})`}} />
+              <Vid {...c} />
             </div>
           );
         })}
@@ -192,7 +196,6 @@ const Scene: React.FC<{layout: Layout; dur: number; startAbs: number}> = ({layou
 
   if (layout.kind === 'card') {
     const s = spring({frame: f, fps, config: {damping: 13, stiffness: 140}});
-    const sway = Math.sin(f / 18) * 1.2;
     return (
       <AbsoluteFill style={{background: C.navy, overflow: 'hidden'}}>
         <div style={{position: 'absolute', inset: -60, filter: 'blur(28px) brightness(0.55) saturate(1.3)'}}><Vid {...layout.clip} /></div>
@@ -200,7 +203,7 @@ const Scene: React.FC<{layout: Layout; dur: number; startAbs: number}> = ({layou
         <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
           <div style={{
             width: 880, height: 1560, borderRadius: 40, overflow: 'hidden', border: `12px solid ${C.white}`, boxShadow: '0 40px 80px rgba(0,0,0,.5)',
-            transform: `translateY(${(1 - s) * 1600}px) rotate(${layout.tilt * s + sway}deg) scale(${pulse})`,
+            transform: `translateY(${(1 - s) * 1600}px) rotate(${layout.tilt * s}deg) scale(${pulse})`,
           }}>
             <Vid {...layout.clip} />
           </div>
@@ -223,29 +226,28 @@ const Scene: React.FC<{layout: Layout; dur: number; startAbs: number}> = ({layou
 
 // ---------- roteiro (em batidas; 4 batidas = 1 compasso ≈ 1,5s) ----------
 type Shot = {beats: number; layout: Layout; label?: string; wipe?: boolean; flash?: boolean; confetti?: boolean};
-const INTRO_BEATS = 16;
+const INTRO_BEATS = 12;
 
 const SHOTS: Shot[] = [
-  // DROP — Diversão
+  // DROP no "Galileu" — Diversão
   {beats: 4, layout: {kind: 'full', clip: {src: 'geral', at: 22.0}}, label: 'DIVERSÃO', flash: true},
-  {beats: 8, layout: {kind: 'cols', clips: [{src: 'geral', at: 18.5}, {src: 'geral', at: 24.5}, {src: 'geral', at: 29.0, rate: 0.5}]}},
+  {beats: 8, layout: {kind: 'cols', clips: [{src: 'geral', at: 18.5}, {src: 'geral', at: 24.5}, {src: 'slow_piscina', at: 0}]}},
   {beats: 2, layout: {kind: 'full', clip: {src: 'geral', at: 0.3}}},
   {beats: 2, layout: {kind: 'full', clip: {src: 'geral', at: 4.5}, zoom: 'out'}},
   // Vôlei
   {beats: 4, layout: {kind: 'full', clip: {src: 'geral', at: 12.0}}, label: 'COPA DAS NAÇÕES', wipe: true},
   {beats: 4, layout: {kind: 'full', clip: {src: 'volei', at: 0.5}, zoom: 'out'}},
-  {beats: 4, layout: {kind: 'full', clip: {src: 'geral', at: 31.2}}},
   {beats: 4, layout: {kind: 'circle', clip: {src: 'volei', at: 13.0}}},
-  {beats: 4, layout: {kind: 'full', clip: {src: 'volei', at: 24.0, rate: 0.6}}, flash: true},
+  {beats: 4, layout: {kind: 'full', clip: {src: 'slow_abraco', at: 0}}, flash: true},
   {beats: 4, layout: {kind: 'rows', clips: [{src: 'volei', at: 34.0}, {src: 'geral', at: 42.0}]}},
   // Louvor
   {beats: 4, layout: {kind: 'card', clip: {src: 'louvor', at: 8.5}, tilt: -4}, label: 'LOUVOR', wipe: true},
   {beats: 4, layout: {kind: 'card', clip: {src: 'louvor', at: 11.8}, tilt: 4}},
-  {beats: 8, layout: {kind: 'cols', clips: [{src: 'louvor', at: 26.0}, {src: 'louvor', at: 30.0}, {src: 'louvor', at: 33.0}]}},
+  {beats: 4, layout: {kind: 'cols', clips: [{src: 'louvor', at: 26.0}, {src: 'louvor', at: 30.0}, {src: 'louvor', at: 33.0}]}},
   {beats: 4, layout: {kind: 'full', clip: {src: 'premiacao', at: 9.2}}},
   // Premiação
   {beats: 4, layout: {kind: 'full', clip: {src: 'geral', at: 44.0}, zoom: 'out'}, label: 'PREMIAÇÃO', wipe: true},
-  {beats: 8, layout: {kind: 'grid', clips: [{src: 'geral', at: 48.5, rate: 0.6}, {src: 'premiacao', at: 21.0, rate: 0.7}, {src: 'premiacao', at: 26.0}, {src: 'premiacao', at: 34.0}]}},
+  {beats: 8, layout: {kind: 'grid', clips: [{src: 'slow_medalhas', at: 0}, {src: 'premiacao', at: 21.0}, {src: 'premiacao', at: 26.0}, {src: 'premiacao', at: 34.0}]}},
   {beats: 8, layout: {kind: 'full', clip: {src: 'geral', at: 70.0}}, flash: true, confetti: true},
 ];
 
@@ -277,13 +279,13 @@ const Intro: React.FC = () => {
   const {fps} = useVideoConfig();
   const dropAt = B(INTRO_BEATS);
   const word = 'CELEBRA'.split('');
-  const teen = spring({frame: f - B(4), fps, config: {damping: 9, stiffness: 180}});
-  const year = spring({frame: f - B(8), fps, config: {damping: 12, stiffness: 160}});
-  const copa = interpolate(f, [B(9), B(10)], [0, 1], clamp);
+  const teen = spring({frame: f - B(3), fps, config: {damping: 9, stiffness: 180}});
+  const year = spring({frame: f - B(6), fps, config: {damping: 12, stiffness: 160}});
+  const copa = interpolate(f, [B(7), B(8)], [0, 1], clamp);
   const zoomOut = interpolate(f, [dropAt - 10, dropAt], [1, 4], {...clamp, easing: Easing.in(Easing.cubic)});
   const fadeOut = interpolate(f, [dropAt - 4, dropAt], [1, 0], clamp);
   const pulse = usePulse(f, 0.02);
-  const ring = interpolate(f, [B(8), B(10)], [0, 1], clamp);
+  const ring = interpolate(f, [B(6), B(8)], [0, 1], clamp);
   return (
     <AbsoluteFill style={{background: `radial-gradient(circle at 50% 42%, ${C.purple} 0%, ${C.blue} 35%, ${C.navy} 75%)`, overflow: 'hidden'}}>
       <Stripes speed={5} opacity={0.1} />
@@ -294,10 +296,10 @@ const Intro: React.FC = () => {
         <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
           <div style={{width: 900, height: 900, borderRadius: '50%', border: `10px dashed ${C.gold}`, opacity: ring * 0.8, transform: `rotate(${f * 1.5}deg) scale(${0.6 + ring * 0.4})`, marginTop: -120}} />
         </AbsoluteFill>
-        <Polaroid clip={{src: 'volei', at: 50.0}} x={-30} y={330} rot={-14} delay={B(10)} />
-        <Polaroid clip={{src: 'louvor', at: 12.0}} x={800} y={300} rot={12} delay={B(11)} />
-        <Polaroid clip={{src: 'geral', at: 42.0}} x={-20} y={1180} rot={10} delay={B(12)} />
-        <Polaroid clip={{src: 'geral', at: 70.5}} x={790} y={1160} rot={-10} delay={B(13)} />
+        <Polaroid clip={{src: 'volei', at: 50.0}} x={-30} y={330} rot={-14} delay={B(8)} />
+        <Polaroid clip={{src: 'louvor', at: 12.0}} x={800} y={300} rot={12} delay={B(9)} />
+        <Polaroid clip={{src: 'geral', at: 42.0}} x={-20} y={1180} rot={10} delay={B(10)} />
+        <Polaroid clip={{src: 'geral', at: 70.5}} x={790} y={1160} rot={-10} delay={B(11)} />
         <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: -120}}>
           <div style={{transform: 'rotate(-5deg)'}}>
             <div style={{display: 'flex', justifyContent: 'center', fontFamily: DISPLAY, fontSize: 250, lineHeight: 0.9, color: C.white, textShadow: '0 12px 0 rgba(0,0,0,.35)'}}>
@@ -359,8 +361,8 @@ export const Motion: React.FC = () => {
         </Sequence>
       ))}
       {timeline.map((s, i) => s.label && (
-        <Sequence key={`l${i}`} from={s.from} durationInFrames={B(INTRO_BEATS + 6) - B(INTRO_BEATS)}>
-          <Kinetic text={s.label} dur={B(INTRO_BEATS + 6) - B(INTRO_BEATS)} size={s.label.length > 10 ? 120 : 160} />
+        <Sequence key={`l${i}`} from={s.from} durationInFrames={B(INTRO_BEATS + 4) - B(INTRO_BEATS)}>
+          <Kinetic text={s.label} dur={B(INTRO_BEATS + 4) - B(INTRO_BEATS)} size={s.label.length > 10 ? 120 : 160} />
         </Sequence>
       ))}
       {timeline.map((s, i) => s.wipe && (
@@ -370,9 +372,9 @@ export const Motion: React.FC = () => {
       <Sequence from={OUTRO_FROM} durationInFrames={TOTAL - OUTRO_FROM}><Outro dur={TOTAL - OUTRO_FROM} /></Sequence>
       <Sequence from={OUTRO_FROM} durationInFrames={8}><Flash /></Sequence>
       <Audio
-        src={staticFile('electrodoodle.mp3')}
-        trimBefore={Math.round(MUSIC_START * FPS)}
-        volume={(f) => interpolate(f, [0, 4, TOTAL - 10, TOTAL], [0, 1, 1, 0], clamp)}
+        src={staticFile('galileu.mp3')}
+        trimBefore={Math.round((MUSIC_START - FILE_OFFSET) * FPS)}
+        volume={(f) => interpolate(f, [0, 6, TOTAL - 45, TOTAL], [0, 1, 1, 0], clamp)}
       />
     </AbsoluteFill>
   );
