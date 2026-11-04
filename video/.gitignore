@@ -5,3 +5,4 @@ public/
 music/
 work/*
 !work/*.py
+input_formatura/
