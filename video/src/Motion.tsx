@@ -62,7 +62,7 @@ const Stripes: React.FC<{speed?: number; opacity?: number}> = ({speed = 4, opaci
 const Ticker: React.FC<{y: number; color?: string; bg?: string; dir?: 1 | -1; rotate?: number}> = ({y, color = C.navy, bg = C.gold, dir = 1, rotate = -4}) => {
   const f = useCurrentFrame();
   const unit = 'CELEBRA TEEN 2026 ★ COPA DAS NAÇÕES ★ G148 TEEN ★ '.repeat(4);
-  const p = ((f * 0.35) % 50) * dir;
+  const p = ((f * 0.06) % 50) * dir;
   const x = dir === 1 ? -p : -50 - p;
   return (
     <div style={{position: 'absolute', left: -200, right: -200, top: y, background: bg, transform: `rotate(${rotate}deg)`, padding: '10px 0', overflow: 'hidden', boxShadow: '0 10px 0 rgba(0,0,0,.25)'}}>
@@ -104,12 +104,12 @@ const Kinetic: React.FC<{text: string; dur: number; y?: number; size?: number; b
   const letters = text.split('');
   return (
     <div style={{position: 'absolute', left: 0, right: 0, top: y, display: 'flex', justifyContent: 'center', transform: `rotate(${rotate}deg) translateX(${out * 1400}px)`}}>
-      <div style={{position: 'relative', padding: '34px 44px 6px'}}>
+      <div style={{position: 'relative', padding: '30px 44px 22px'}}>
         <div style={{position: 'absolute', inset: 0, background: bg, transform: `scaleX(${box})`, transformOrigin: 'left', boxShadow: '14px 14px 0 rgba(0,0,0,.35)'}} />
-        <div style={{position: 'relative', display: 'flex', fontFamily: DISPLAY, fontSize: size, lineHeight: 1, color, letterSpacing: 2, clipPath: 'inset(-60% -20% 0 -20%)'}}>
+        <div style={{position: 'relative', display: 'flex', fontFamily: DISPLAY, fontSize: size, lineHeight: 1, color, letterSpacing: 2}}>
           {letters.map((l, i) => {
             const s = spring({frame: f - 2 - i * 0.8, fps, config: {damping: 14, stiffness: 260}});
-            return <span key={i} style={{display: 'inline-block', transform: `translateY(${(1 - s) * 140}%)`, whiteSpace: 'pre'}}>{l}</span>;
+            return <span key={i} style={{display: 'inline-block', opacity: Math.min(1, s * 1.4), transform: `translateY(${(1 - s) * 45}%)`, whiteSpace: 'pre'}}>{l}</span>;
           })}
         </div>
       </div>
@@ -236,10 +236,8 @@ const SHOTS: Shot[] = [
   {beats: 2, layout: {kind: 'full', clip: {src: 'geral', at: 6.75}, zoom: 'out'}},
   // Vôlei
   {beats: 4, layout: {kind: 'full', clip: {src: 'geral', at: 12.0}}, label: 'COPA DAS NAÇÕES', wipe: true},
-  {beats: 4, layout: {kind: 'full', clip: {src: 'volei', at: 0.5}, zoom: 'out'}},
-  {beats: 4, layout: {kind: 'circle', clip: {src: 'volei', at: 13.0}}},
+  {beats: 12, layout: {kind: 'full', clip: {src: 'volei', at: 9.6}}},
   {beats: 4, layout: {kind: 'full', clip: {src: 'slow_abraco', at: 0}}, flash: true},
-  {beats: 4, layout: {kind: 'rows', clips: [{src: 'volei', at: 34.0}, {src: 'geral', at: 42.0}]}},
   // Louvor
   {beats: 4, layout: {kind: 'card', clip: {src: 'louvor', at: 8.5}, tilt: -4}, label: 'LOUVOR', wipe: true},
   {beats: 4, layout: {kind: 'card', clip: {src: 'louvor', at: 11.8}, tilt: 4}},
@@ -279,13 +277,13 @@ const Intro: React.FC = () => {
   const {fps} = useVideoConfig();
   const dropAt = B(INTRO_BEATS);
   const word = 'CELEBRA'.split('');
-  const teen = spring({frame: f - B(3), fps, config: {damping: 9, stiffness: 180}});
-  const year = spring({frame: f - B(6), fps, config: {damping: 12, stiffness: 160}});
-  const copa = interpolate(f, [B(7), B(8)], [0, 1], clamp);
+  const teen = spring({frame: f - 10, fps, config: {damping: 9, stiffness: 180}});
+  const year = spring({frame: f - 20, fps, config: {damping: 12, stiffness: 160}});
+  const copa = interpolate(f, [26, 38], [0, 1], clamp);
   const zoomOut = interpolate(f, [dropAt - 10, dropAt], [1, 4], {...clamp, easing: Easing.in(Easing.cubic)});
   const fadeOut = interpolate(f, [dropAt - 4, dropAt], [1, 0], clamp);
   const pulse = usePulse(f, 0.02);
-  const ring = interpolate(f, [B(6), B(8)], [0, 1], clamp);
+  const ring = interpolate(f, [20, 36], [0, 1], clamp);
   return (
     <AbsoluteFill style={{background: `radial-gradient(circle at 50% 42%, ${C.purple} 0%, ${C.blue} 35%, ${C.navy} 75%)`, overflow: 'hidden'}}>
       <Stripes speed={5} opacity={0.1} />
@@ -296,15 +294,15 @@ const Intro: React.FC = () => {
         <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
           <div style={{width: 900, height: 900, borderRadius: '50%', border: `10px dashed ${C.gold}`, opacity: ring * 0.8, transform: `rotate(${f * 1.5}deg) scale(${0.6 + ring * 0.4})`, marginTop: -120}} />
         </AbsoluteFill>
-        <Polaroid clip={{src: 'volei', at: 50.0}} x={-30} y={330} rot={-14} delay={B(8)} />
-        <Polaroid clip={{src: 'louvor', at: 12.0}} x={800} y={300} rot={12} delay={B(9)} />
-        <Polaroid clip={{src: 'geral', at: 42.0}} x={-20} y={1180} rot={10} delay={B(10)} />
-        <Polaroid clip={{src: 'geral', at: 70.5}} x={790} y={1160} rot={-10} delay={B(11)} />
+        <Polaroid clip={{src: 'volei', at: 50.0}} x={-30} y={330} rot={-14} delay={B(3)} />
+        <Polaroid clip={{src: 'louvor', at: 12.0}} x={800} y={300} rot={12} delay={B(4)} />
+        <Polaroid clip={{src: 'geral', at: 42.0}} x={-20} y={1180} rot={10} delay={B(5)} />
+        <Polaroid clip={{src: 'geral', at: 70.5}} x={790} y={1160} rot={-10} delay={B(6)} />
         <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: -120}}>
           <div style={{transform: 'rotate(-5deg)'}}>
             <div style={{display: 'flex', justifyContent: 'center', fontFamily: DISPLAY, fontSize: 250, lineHeight: 0.9, color: C.white, textShadow: '0 12px 0 rgba(0,0,0,.35)'}}>
               {word.map((l, i) => {
-                const s = spring({frame: f - i * 2, fps, config: {damping: 10, stiffness: 200}});
+                const s = spring({frame: f - i * 1, fps, config: {damping: 12, stiffness: 260}});
                 return <span key={i} style={{display: 'inline-block', transform: `translateY(${(1 - s) * -600}px) rotate(${(1 - s) * (i % 2 ? 30 : -30)}deg)`}}>{l}</span>;
               })}
             </div>
