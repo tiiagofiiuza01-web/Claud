@@ -1,2 +1,7 @@
 node_modules/
 out/
+input/
+public/
+music/
+work/*
+!work/*.py
