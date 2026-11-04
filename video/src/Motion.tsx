@@ -104,9 +104,9 @@ const Kinetic: React.FC<{text: string; dur: number; y?: number; size?: number; b
   const letters = text.split('');
   return (
     <div style={{position: 'absolute', left: 0, right: 0, top: y, display: 'flex', justifyContent: 'center', transform: `rotate(${rotate}deg) translateX(${out * 1400}px)`}}>
-      <div style={{position: 'relative', padding: '16px 44px 6px'}}>
+      <div style={{position: 'relative', padding: '34px 44px 6px'}}>
         <div style={{position: 'absolute', inset: 0, background: bg, transform: `scaleX(${box})`, transformOrigin: 'left', boxShadow: '14px 14px 0 rgba(0,0,0,.35)'}} />
-        <div style={{position: 'relative', display: 'flex', fontFamily: DISPLAY, fontSize: size, lineHeight: 1, color, letterSpacing: 2, overflow: 'hidden'}}>
+        <div style={{position: 'relative', display: 'flex', fontFamily: DISPLAY, fontSize: size, lineHeight: 1, color, letterSpacing: 2, clipPath: 'inset(-60% -20% 0 -20%)'}}>
           {letters.map((l, i) => {
             const s = spring({frame: f - 2 - i * 0.8, fps, config: {damping: 14, stiffness: 260}});
             return <span key={i} style={{display: 'inline-block', transform: `translateY(${(1 - s) * 140}%)`, whiteSpace: 'pre'}}>{l}</span>;
@@ -233,7 +233,7 @@ const SHOTS: Shot[] = [
   {beats: 4, layout: {kind: 'full', clip: {src: 'geral', at: 22.0}}, label: 'DIVERSÃO', flash: true},
   {beats: 8, layout: {kind: 'cols', clips: [{src: 'geral', at: 18.5}, {src: 'geral', at: 24.5}, {src: 'slow_piscina', at: 0}]}},
   {beats: 2, layout: {kind: 'full', clip: {src: 'geral', at: 0.3}}},
-  {beats: 2, layout: {kind: 'full', clip: {src: 'geral', at: 4.5}, zoom: 'out'}},
+  {beats: 2, layout: {kind: 'full', clip: {src: 'geral', at: 6.75}, zoom: 'out'}},
   // Vôlei
   {beats: 4, layout: {kind: 'full', clip: {src: 'geral', at: 12.0}}, label: 'COPA DAS NAÇÕES', wipe: true},
   {beats: 4, layout: {kind: 'full', clip: {src: 'volei', at: 0.5}, zoom: 'out'}},
