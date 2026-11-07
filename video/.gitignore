@@ -6,3 +6,4 @@ music/
 work/*
 !work/*.py
 input_formatura/
+input_vintage/
