@@ -42,7 +42,7 @@ Se o pedido já respondeu algum item, não pergunte de novo — confirme em uma 
 1. `ffprobe` em cada arquivo (duração, resolução, rotação do iPhone).
 2. Folha de contato com tempo: `scripts/sheet.sh VIDEO saida.jpg 1` (vídeos longos: rode de novo com início em 72s etc.) e **olhe as imagens**.
 3. Fala/letra: `python3 -I scripts/transcribe.py ARQ` (ou `--music` para letra cantada ao vivo).
-4. Proxies: `scripts/proxy.sh ENTRADA video/public/nome.mp4` (1080×1920, 30fps, sem áudio).
+4. Proxies **com color grade** (sempre — imagem de celular fica crua): `python3 -I scripts/colorgrade.py video/public PREFIXO ARQ1 ARQ2 …` iguala balanço de branco e exposição entre os clipes e aplica contraste suave, vida nas cores, redução de ruído e nitidez, a partir do original 4K, com áudio limpo. Monte um antes/depois (um quadro de cada clipe, `hstack`/`vstack`) e olhe; clipes dominados por pele ou parede bege enganam a medição — ajuste à mão (ex.: R×0,97, B×1,055). Sem grade: `scripts/proxy.sh`.
 5. Monte a lista de trechos (`fonte inicio duracao`) e rode `scripts/shots_check.sh lista.txt grade.jpg`. **Stories já editados têm cortes internos**: se início, meio e fim não forem a mesma cena, ajuste o trecho. Esse foi o erro mais comum (uma "folha de papel" no lugar dos cantores, um homem de terno no meio da entrada).
 
 ## 4. Música
@@ -70,4 +70,5 @@ Uso do Magnific (efeitos tipo After Effects, custos): `references/magnific.md`.
 
 - Envie a versão leve (SendUserFile) e diga: duração, o que tem em cada parte, música e **crédito obrigatório** (CC BY) ou aviso de direitos, créditos do Magnific gastos, e que a máquina na nuvem é temporária (baixar o vídeo).
 - Commit só do código (`video/src`, scripts) — nunca dos vídeos.
+- Áudio da fala: deixe a voz só nas frases que importam (volume por palavra/frase) e silêncio no resto quando o usuário vai pôr música no app. Confira com `astats` que a faixa tem som onde deve — se o usuário disser que veio mudo, meça antes de refazer (players do app abrem no mudo).
 - Pedidos de ajuste: localize o segundo pedido no vídeo renderizado (`ffmpeg -ss T ... tile`) antes de mexer, para trocar exatamente o que a pessoa viu.
