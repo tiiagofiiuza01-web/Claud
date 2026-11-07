@@ -1,8 +1,8 @@
 import React from 'react';
-import {AbsoluteFill, Audio, OffthreadVideo, Sequence, interpolate, staticFile, useCurrentFrame, Easing} from 'remotion';
+import {AbsoluteFill, OffthreadVideo, Sequence, interpolate, staticFile, useCurrentFrame, Easing} from 'remotion';
 import {loadFont} from '@remotion/fonts';
 
-// Stories simples: voz do pastor + legenda + música baixa, fusões suaves (sem efeitos)
+// Stories simples: voz do pastor só nas frases legendadas (sem música: o usuário põe no Stories), fusões suaves
 const SANS = 'Montserrat';
 loadFont({family: SANS, url: staticFile('montserrat.woff2'), weight: '100 900'});
 
@@ -38,7 +38,10 @@ const Clip: React.FC<{shot: Shot; len: number; i: number; first: boolean}> = ({s
   const total = len + XF;
   const op = first ? 1 : interpolate(f, [0, XF], [0, 1], clamp);
   const sc = interpolate(f, [0, total], i % 2 ? [1.0, 1.04] : [1.04, 1.0], {easing: ease});
-  const vol = shot.voice ? interpolate(f, [XF / 2, XF / 2 + 4, XF / 2 + len - 4, XF / 2 + len], [0, 1, 1, 0], clamp) : 0;
+  // voz só enquanto a frase legendada é dita; silêncio total fora dela
+  const t = shot.from + (f - XF / 2) / FPS;
+  const w = shot.words;
+  const vol = w ? interpolate(t, [w[0][1] - 0.2, w[0][1] - 0.08, w[w.length - 1][2] + 0.2, w[w.length - 1][2] + 0.35], [0, 1, 1, 0], clamp) : 0;
   return (
     <AbsoluteFill style={{opacity: op, overflow: 'hidden'}}>
       <div style={{width: '100%', height: '100%', transform: `scale(${sc})`}}>
@@ -69,14 +72,6 @@ const Caption: React.FC<{shot: Shot}> = ({shot}) => {
 };
 
 export const Vintage: React.FC = () => {
-  // música: mais presente sem voz, bem baixa sob a fala
-  const music = (f: number) => {
-    let v = 0.5;
-    for (const x of TL) if (x.voice && f >= x.start - 8 && f <= x.start + x.len + 8) {
-      v = Math.min(v, interpolate(f, [x.start - 8, x.start, x.start + x.len, x.start + x.len + 8], [0.5, 0.13, 0.13, 0.5], clamp));
-    }
-    return v * interpolate(f, [0, 12, TOTAL - 40, TOTAL], [0, 1, 1, 0], clamp);
-  };
   const fadeOut = (f: number) => interpolate(f, [TOTAL - 24, TOTAL], [0, 1], clamp);
   return (
     <AbsoluteFill style={{background: 'black'}}>
@@ -91,7 +86,6 @@ export const Vintage: React.FC = () => {
       ))}
       <FadeIn />
       <FadeOutLayer fn={fadeOut} />
-      <Audio src={staticFile('vint_musica.mp3')} volume={music} />
     </AbsoluteFill>
   );
 };
